@@ -9,9 +9,13 @@ import org.springframework.web.client.RestTemplate;
 public class AppConfig {
 
     private final String userServiceUrl;
+    private final String paymentServiceUrl;
 
-    public AppConfig(@Value("${user-service.url}") String userServiceUrl) {
+    public AppConfig(
+            @Value("${user-service.url}") String userServiceUrl,
+            @Value("${payment-service.url}") String paymentServiceUrl) {
         this.userServiceUrl = userServiceUrl;
+        this.paymentServiceUrl = paymentServiceUrl;
     }
 
     @Bean
@@ -21,5 +25,9 @@ public class AppConfig {
 
     public String getUserServiceUrl() {
         return userServiceUrl;
+    }
+
+    public String getPaymentServiceUrl() {
+        return paymentServiceUrl;
     }
 }

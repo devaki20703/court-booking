@@ -37,6 +37,9 @@ management:
 user-service:
   url: http://localhost:8081
 
+payment-service:
+  url: http://localhost:8083
+
 app:
   jwt:
     secret: courtBookingSecretKey2024VeryLongSecretKeyForJWTTokenGeneration

@@ -13,6 +13,8 @@ public class BookingDTO {
     private LocalTime endTime;
     private String status;
     private String notes;
+    private Long paymentId;
+    private Double amount;
 
     public BookingDTO() {}
 
@@ -46,4 +48,8 @@ public class BookingDTO {
     public void setStatus(String status) { this.status = status; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public Long getPaymentId() { return paymentId; }
+    public void setPaymentId(Long paymentId) { this.paymentId = paymentId; }
+    public Double getAmount() { return amount; }
+    public void setAmount(Double amount) { this.amount = amount; }
 }

@@ -35,6 +35,9 @@ public class Booking {
     @Column
     private String notes;
 
+    @Column
+    private Long paymentId;
+
     public Booking() {
     }
 
@@ -110,5 +113,13 @@ public class Booking {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public Long getPaymentId() {
+        return paymentId;
+    }
+
+    public void setPaymentId(Long paymentId) {
+        this.paymentId = paymentId;
     }
 }

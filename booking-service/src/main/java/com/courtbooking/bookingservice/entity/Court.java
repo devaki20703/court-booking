@@ -24,6 +24,9 @@ public class Court {
     @Column
     private String description;
 
+    @Column
+    private Double pricePerHour;
+
     public Court() {
     }
 
@@ -81,5 +84,13 @@ public class Court {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Double getPricePerHour() {
+        return pricePerHour;
+    }
+
+    public void setPricePerHour(Double pricePerHour) {
+        this.pricePerHour = pricePerHour;
     }
 }

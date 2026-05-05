@@ -12,6 +12,9 @@ import com.courtbooking.bookingservice.repository.CourtRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,11 +25,14 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final CourtRepository courtRepository;
     private final UserServiceClient userServiceClient;
+    private final PaymentServiceClient paymentServiceClient;
 
-    public BookingService(BookingRepository bookingRepository, CourtRepository courtRepository, UserServiceClient userServiceClient) {
+    public BookingService(BookingRepository bookingRepository, CourtRepository courtRepository, 
+                          UserServiceClient userServiceClient, PaymentServiceClient paymentServiceClient) {
         this.bookingRepository = bookingRepository;
         this.courtRepository = courtRepository;
         this.userServiceClient = userServiceClient;
+        this.paymentServiceClient = paymentServiceClient;
     }
 
     @Transactional
@@ -53,6 +59,12 @@ public class BookingService {
             throw new BadRequestException("Court is already booked for the selected time slot");
         }
 
+        double hours = Duration.between(request.getStartTime(), request.getEndTime()).toHours();
+        double amount = 0;
+        if (court.getPricePerHour() != null) {
+            amount = hours * court.getPricePerHour();
+        }
+
         Booking booking = new Booking(
             request.getUserId(),
             court,
@@ -64,7 +76,18 @@ public class BookingService {
         );
 
         booking = bookingRepository.save(booking);
-        return mapToDTO(booking);
+
+        if (amount > 0) {
+            Long paymentId = paymentServiceClient.createPayment(
+                booking.getId(),
+                request.getUserId(),
+                BigDecimal.valueOf(amount).setScale(2, RoundingMode.HALF_UP)
+            );
+            booking.setPaymentId(paymentId);
+            booking = bookingRepository.save(booking);
+        }
+
+        return mapToDTO(booking, amount);
     }
 
     @Transactional
@@ -112,6 +135,10 @@ public class BookingService {
     }
 
     private BookingDTO mapToDTO(Booking booking) {
+        return mapToDTO(booking, 0);
+    }
+
+    private BookingDTO mapToDTO(Booking booking, double amount) {
         BookingDTO dto = new BookingDTO();
         dto.setId(booking.getId());
         dto.setUserId(booking.getUserId());
@@ -122,6 +149,8 @@ public class BookingService {
         dto.setEndTime(booking.getEndTime());
         dto.setStatus(booking.getStatus().name());
         dto.setNotes(booking.getNotes());
+        dto.setPaymentId(booking.getPaymentId());
+        dto.setAmount(amount);
         return dto;
     }
 }
