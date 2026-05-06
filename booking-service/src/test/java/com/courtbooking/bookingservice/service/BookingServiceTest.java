@@ -24,6 +24,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class BookingServiceTest {
@@ -57,7 +58,12 @@ class BookingServiceTest {
         request.setEndTime(LocalTime.of(11, 0));
         request.setNotes("Test booking");
 
-        Court court = new Court("Court Alpha", "Tennis", "Location 1", true, "Description");
+        Court court = new Court();
+        court.setName("Court Alpha");
+        court.setSportType("Tennis");
+        court.setLocation("Location 1");
+        court.setAvailable(true);
+        court.setDescription("Description");
         court.setId(1L);
         court.setPricePerHour(50.0);
 
@@ -77,8 +83,43 @@ class BookingServiceTest {
         assertEquals(1L, result.getId());
         assertEquals(1L, result.getCourtId());
         assertEquals("CONFIRMED", result.getStatus());
-        verify(bookingRepository).save(any(Booking.class));
+        verify(bookingRepository, times(2)).save(any(Booking.class));
         verify(paymentServiceClient).createPayment(any(), any(), any());
+    }
+
+    @Test
+    void shouldCreateBookingWithoutPaymentWhenPriceIsNull() {
+        BookingRequest request = new BookingRequest();
+        request.setUserId(1L);
+        request.setCourtId(1L);
+        request.setBookingDate(LocalDate.now().plusDays(1));
+        request.setStartTime(LocalTime.of(10, 0));
+        request.setEndTime(LocalTime.of(11, 0));
+
+        Court court = new Court();
+        court.setName("Court Alpha");
+        court.setSportType("Tennis");
+        court.setLocation("Location 1");
+        court.setAvailable(true);
+        court.setDescription("Description");
+        court.setId(1L);
+        court.setPricePerHour(null);
+
+        when(userServiceClient.validateUser(1L)).thenReturn(true);
+        when(courtRepository.findById(1L)).thenReturn(Optional.of(court));
+        when(bookingRepository.findConflictingBookings(any(), any(), any(), any())).thenReturn(Collections.emptyList());
+        when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> {
+            Booking b = invocation.getArgument(0);
+            b.setId(1L);
+            return b;
+        });
+
+        BookingDTO result = bookingService.createBooking(request);
+
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        verify(bookingRepository, times(1)).save(any(Booking.class));
+        verify(paymentServiceClient, never()).createPayment(any(), any(), any());
     }
 
     @Test
@@ -110,7 +151,12 @@ class BookingServiceTest {
         request.setUserId(1L);
         request.setCourtId(1L);
 
-        Court court = new Court("Court Alpha", "Tennis", "Location 1", false, "Description");
+        Court court = new Court();
+        court.setName("Court Alpha");
+        court.setSportType("Tennis");
+        court.setLocation("Location 1");
+        court.setAvailable(false);
+        court.setDescription("Description");
         court.setId(1L);
 
         when(userServiceClient.validateUser(1L)).thenReturn(true);
@@ -128,7 +174,12 @@ class BookingServiceTest {
         request.setStartTime(LocalTime.of(10, 0));
         request.setEndTime(LocalTime.of(11, 0));
 
-        Court court = new Court("Court Alpha", "Tennis", "Location 1", true, "Description");
+        Court court = new Court();
+        court.setName("Court Alpha");
+        court.setSportType("Tennis");
+        court.setLocation("Location 1");
+        court.setAvailable(true);
+        court.setDescription("Description");
         court.setId(1L);
 
         Booking existingBooking = new Booking();
@@ -186,5 +237,93 @@ class BookingServiceTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(1L, result.get(0).getId());
+    }
+
+    @Test
+    void shouldGetAvailableSlots() {
+        Court court = new Court();
+        court.setId(1L);
+        court.setName("Court Alpha");
+        court.setSportType("Tennis");
+        court.setLocation("Location 1");
+        court.setAvailable(true);
+
+        when(courtRepository.findAll()).thenReturn(List.of(court));
+        when(bookingRepository.findConflictingBookings(any(), any(), any(), any()))
+                .thenReturn(List.of());
+
+        List<BookingDTO> result = bookingService.getAvailableSlots(LocalDate.now());
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void shouldGetAvailableSlotsWithExistingBookings() {
+        Court court = new Court();
+        court.setId(1L);
+        court.setName("Court Alpha");
+        court.setSportType("Tennis");
+        court.setLocation("Location 1");
+        court.setAvailable(true);
+
+        Booking existingBooking = new Booking();
+        existingBooking.setId(1L);
+        existingBooking.setUserId(1L);
+        existingBooking.setCourt(court);
+        existingBooking.setBookingDate(LocalDate.now());
+        existingBooking.setStartTime(java.time.LocalTime.of(10, 0));
+        existingBooking.setEndTime(java.time.LocalTime.of(11, 0));
+        existingBooking.setStatus(BookingStatus.CONFIRMED);
+
+        when(courtRepository.findAll()).thenReturn(List.of(court));
+        when(bookingRepository.findConflictingBookings(any(), any(), any(), any()))
+                .thenReturn(List.of(existingBooking));
+
+        List<BookingDTO> result = bookingService.getAvailableSlots(LocalDate.now());
+
+        assertNotNull(result);
+    }
+
+    @Test
+    void shouldGetAvailableCourtsByDate() {
+        Court availableCourt = new Court();
+        availableCourt.setId(1L);
+        availableCourt.setName("Court Alpha");
+        availableCourt.setSportType("Tennis");
+        availableCourt.setLocation("Location 1");
+        availableCourt.setAvailable(true);
+
+        when(courtRepository.findAll()).thenReturn(List.of(availableCourt));
+        when(bookingRepository.findConflictingBookings(any(), any(), any(), any()))
+                .thenReturn(List.of());
+
+        List<Court> result = bookingService.getAvailableCourtsByDate(LocalDate.now());
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("Court Alpha", result.get(0).getName());
+    }
+
+    @Test
+    void shouldGetAvailableCourtsByDateWithNoAvailability() {
+        Court court = new Court();
+        court.setId(1L);
+        court.setName("Court Alpha");
+        court.setSportType("Tennis");
+        court.setLocation("Location 1");
+        court.setAvailable(true);
+
+        Booking existingBooking = new Booking();
+        existingBooking.setId(1L);
+        existingBooking.setCourt(court);
+
+        when(courtRepository.findAll()).thenReturn(List.of(court));
+        when(bookingRepository.findConflictingBookings(any(), any(), any(), any()))
+                .thenReturn(List.of(existingBooking));
+
+        List<Court> result = bookingService.getAvailableCourtsByDate(LocalDate.now());
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 }

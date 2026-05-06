@@ -45,7 +45,10 @@ class UserServiceTest {
 
     @Test
     void shouldRegisterSuccessfully() {
-        RegisterRequest request = new RegisterRequest("testuser", "test@example.com", "password123");
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername("testuser");
+        request.setEmail("test@example.com");
+        request.setPassword("password123");
 
         when(userRepository.existsByUsername("testuser")).thenReturn(false);
         when(userRepository.existsByEmail("test@example.com")).thenReturn(false);
@@ -69,7 +72,10 @@ class UserServiceTest {
 
     @Test
     void shouldThrowExceptionWhenUsernameExists() {
-        RegisterRequest request = new RegisterRequest("existinguser", "test@example.com", "password123");
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername("existinguser");
+        request.setEmail("test@example.com");
+        request.setPassword("password123");
 
         when(userRepository.existsByUsername("existinguser")).thenReturn(true);
 
@@ -78,7 +84,10 @@ class UserServiceTest {
 
     @Test
     void shouldThrowExceptionWhenEmailExists() {
-        RegisterRequest request = new RegisterRequest("newuser", "existing@example.com", "password123");
+        RegisterRequest request = new RegisterRequest();
+        request.setUsername("newuser");
+        request.setEmail("existing@example.com");
+        request.setPassword("password123");
 
         when(userRepository.existsByUsername("newuser")).thenReturn(false);
         when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
@@ -88,7 +97,10 @@ class UserServiceTest {
 
     @Test
     void shouldLoginSuccessfully() {
-        LoginRequest request = new LoginRequest("testuser", "password123");
+        LoginRequest request = new LoginRequest();
+        request.setUsernameOrEmail("testuser");
+        request.setPassword("password123");
+        
         User user = new User("testuser", "test@example.com", "encodedPassword", Role.USER, true);
         user.setId(1L);
 
@@ -105,7 +117,10 @@ class UserServiceTest {
 
     @Test
     void shouldThrowExceptionWhenInvalidCredentials() {
-        LoginRequest request = new LoginRequest("testuser", "wrongpassword");
+        LoginRequest request = new LoginRequest();
+        request.setUsernameOrEmail("testuser");
+        request.setPassword("wrongpassword");
+        
         User user = new User("testuser", "test@example.com", "encodedPassword", Role.USER, true);
 
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
@@ -116,7 +131,10 @@ class UserServiceTest {
 
     @Test
     void shouldThrowExceptionWhenUserDisabled() {
-        LoginRequest request = new LoginRequest("testuser", "password123");
+        LoginRequest request = new LoginRequest();
+        request.setUsernameOrEmail("testuser");
+        request.setPassword("password123");
+        
         User user = new User("testuser", "test@example.com", "encodedPassword", Role.USER, false);
 
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(user));
