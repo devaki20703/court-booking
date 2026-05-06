@@ -6,6 +6,7 @@ A Spring Boot Microservices architecture for a Court Booking Application with:
 - API Gateway (Entry point with JWT authentication)
 - User Service (User management)
 - Booking Service (Court and Booking management)
+- Payment Service (Payment processing)
 
 ## Folder Structure
 
@@ -51,6 +52,20 @@ CourtBook/
 │       │   ├── config/
 │       │   └── exception/
 │       └── resources/application.yml
+├── payment-service/                    (Payment Processing)
+│   ├── pom.xml
+│   └── src/main/
+│       ├── java/com/courtbooking/paymentservice/
+│       │   ├── PaymentServiceApplication.java
+│       │   ├── controller/
+│       │   ├── service/
+│       │   ├── repository/
+│       │   ├── entity/
+│       │   ├── dto/
+│       │   ├── config/
+│       │   ├── security/
+│       │   └── exception/
+│       └── resources/application.yml
 └── sql/
     ├── user-service-schema.sql
     └── booking-service-schema.sql
@@ -70,6 +85,7 @@ Start services in the following order:
 2. **API Gateway** (Port: 8080)
 3. **User Service** (Port: 8081)
 4. **Booking Service** (Port: 8082)
+5. **Payment Service** (Port: 8083)
 
 ## Database Setup
 
@@ -78,6 +94,7 @@ Create databases in MySQL:
 ```sql
 CREATE DATABASE court_booking_users;
 CREATE DATABASE court_booking_db;
+CREATE DATABASE court_booking_payments;
 ```
 
 Or use the provided SQL scripts:
@@ -97,6 +114,7 @@ cd eureka-server && mvn clean install
 cd api-gateway && mvn clean install
 cd user-service && mvn clean install
 cd booking-service && mvn clean install
+cd payment-service && mvn clean install
 ```
 
 ## Run Commands
@@ -113,6 +131,9 @@ cd user-service && mvn spring-boot:run
 
 # Run Booking Service
 cd booking-service && mvn spring-boot:run
+
+# Run Payment Service
+cd payment-service && mvn spring-boot:run
 ```
 
 ## API Endpoints
@@ -140,6 +161,17 @@ cd booking-service && mvn spring-boot:run
 | DELETE | /bookings/{id} | Cancel booking | JWT |
 | GET | /bookings/user/{userId} | Get user bookings | JWT |
 | GET | /bookings/available?date= | Get available slots | JWT |
+
+### Payment Service (Port: 8083)
+
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | /api/payments | Create payment | JWT |
+| GET | /api/payments/{id} | Get payment by ID | JWT |
+| GET | /api/payments/booking/{bookingId} | Get payments by booking | JWT |
+| GET | /api/payments/user/{userId} | Get payments by user | JWT |
+| POST | /api/payments/{id}/process | Process payment | JWT |
+| POST | /api/payments/{id}/refund | Refund payment | JWT |
 
 ## Client Request Flow
 
@@ -205,6 +237,7 @@ Authorization: Bearer <token>
 |---------|------------|-------------|
 | User Service | http://localhost:8081/swagger-ui.html | http://localhost:8081/api-docs |
 | Booking Service | http://localhost:8082/swagger-ui.html | http://localhost:8082/api-docs |
+| Payment Service | http://localhost:8083/swagger-ui.html | http://localhost:8083/api-docs |
 
 ## Security
 
@@ -270,6 +303,10 @@ spring:
           uri: lb://booking-service
           predicates:
             - Path=/courts/**,/bookings/**
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/payments/**,/api/payments/**
 ```
 
 **User Service** (application.yml):
@@ -298,6 +335,19 @@ spring:
     password: root
 ```
 
+**Payment Service** (application.yml):
+```yaml
+server:
+  port: 8083
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/court_booking_payments
+    username: root
+    password: root
+```
+
 ## Notes
 
 1. Start Eureka Server first and wait for it to be ready
@@ -306,3 +356,4 @@ spring:
 4. JWT filter validates tokens for protected endpoints
 5. Booking Service validates user via REST call to User Service
 6. Use RestTemplate for service-to-service communication
+7. Payment is automatically created when a booking with a fee is made
