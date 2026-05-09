@@ -10,6 +10,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpHeaders;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -38,6 +39,15 @@ public class BookingController {
             @RequestParam Long userId) {
         bookingService.cancelBooking(id, userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all bookings", description = "Returns all bookings")
+    public ResponseEntity<List<BookingDTO>> getAllBookings(@RequestHeader(value = "X-User-Role", required = false) String userRole) {
+        System.out.println("DEBUG: X-User-Role header = [" + userRole + "]");
+        List<BookingDTO> bookings = bookingService.getAllBookings();
+        System.out.println("DEBUG: Found " + bookings.size() + " bookings");
+        return ResponseEntity.ok(bookings);
     }
 
     @GetMapping("/user/{userId}")

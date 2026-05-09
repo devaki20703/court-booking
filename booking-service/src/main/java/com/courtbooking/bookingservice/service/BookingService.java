@@ -105,6 +105,12 @@ public class BookingService {
                 .collect(Collectors.toList());
     }
 
+    public List<BookingDTO> getAllBookings() {
+        return bookingRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     public List<BookingDTO> getAvailableSlots(LocalDate date) {
         return courtRepository.findAll().stream()
                 .filter(c -> c.getAvailable())

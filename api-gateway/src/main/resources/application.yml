@@ -2,12 +2,18 @@ server:
   port: 8080
 
 spring:
+  main:
+    web-application-type: reactive
   application:
     name: api-gateway
   cloud:
     discovery:
       enabled: true
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      httpclient:
+        response-timeout: 30s
       routes:
         - id: user-service
           uri: lb://user-service
@@ -18,15 +24,13 @@ spring:
         - id: booking-service
           uri: lb://booking-service
           predicates:
-            - Path=/courts/**,/bookings/**
+            - Path=/courts/**,/bookings/**,/bookings
           filters:
             - StripPrefix=0
         - id: payment-service
           uri: lb://payment-service
           predicates:
-            - Path=/payments/**,/api/payments/**
-          filters:
-            - StripPrefix=0
+            - Path=/api/payments/**,/payments/**
       discoveryLocator:
         enabled: true
 
@@ -50,8 +54,12 @@ management:
 app:
   jwt:
     secret: courtBookingSecretKey2024VeryLongSecretKeyForJWTTokenGeneration
+    expiration: 86400000
+  performance:
+    threshold: 500
 
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     reactor.netty: DEBUG
+    com.courtbooking.apigateway: DEBUG

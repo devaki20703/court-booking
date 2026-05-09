@@ -3,6 +3,8 @@ package com.courtbooking.apigateway.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -21,6 +23,8 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
+    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     private final String jwtSecret;
 
     public JwtAuthenticationFilter(@Value("${app.jwt.secret}") String jwtSecret) {
@@ -38,8 +42,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
+        logger.info("JWT Filter: Processing path = {}", path);
 
         if (isPublicPath(path)) {
+            logger.info("JWT Filter: Path is public, skipping");
             return chain.filter(exchange);
         }
 
@@ -60,11 +66,19 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                     .getPayload();
 
             String userId = claims.getSubject();
+            String username = claims.get("username", String.class);
             String role = claims.get("role", String.class);
 
+            ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                    .header("X-User-Id", userId)
+                    .header("X-Username", username != null ? username : "")
+                    .header("X-User-Role", role != null ? role : "")
+                    .build();
+
+            logger.info("JWT Filter: Added headers - X-User-Id: {}, X-User-Role: {}", userId, role);
+
             ServerWebExchange modifiedExchange = exchange.mutate()
-                    .request(builder -> builder.header("X-User-Id", userId)
-                            .header("X-User-Role", role != null ? role : ""))
+                    .request(mutatedRequest)
                     .build();
 
             return chain.filter(modifiedExchange);

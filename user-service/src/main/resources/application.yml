@@ -38,6 +38,8 @@ app:
   jwt:
     secret: courtBookingSecretKey2024VeryLongSecretKeyForJWTTokenGeneration
     expiration: 86400000
+  performance:
+    threshold: 500
 
 springdoc:
   api-docs:

@@ -29,6 +29,7 @@ public class CourtService {
             true,
             request.getDescription()
         );
+        court.setPricePerHour(request.getPricePerHour());
 
         court = courtRepository.save(court);
         return mapToDTO(court);
@@ -43,6 +44,9 @@ public class CourtService {
         court.setSportType(request.getSportType());
         court.setLocation(request.getLocation());
         court.setDescription(request.getDescription());
+        if (request.getPricePerHour() != null) {
+            court.setPricePerHour(request.getPricePerHour());
+        }
 
         court = courtRepository.save(court);
         return mapToDTO(court);
@@ -83,6 +87,7 @@ public class CourtService {
         dto.setLocation(court.getLocation());
         dto.setAvailable(court.getAvailable());
         dto.setDescription(court.getDescription());
+        dto.setPricePerHour(court.getPricePerHour());
         return dto;
     }
 }

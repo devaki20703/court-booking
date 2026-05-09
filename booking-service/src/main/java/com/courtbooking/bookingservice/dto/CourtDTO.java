@@ -7,16 +7,18 @@ public class CourtDTO {
     private String location;
     private Boolean available;
     private String description;
+    private Double pricePerHour;
 
     public CourtDTO() {}
 
-    public CourtDTO(Long id, String name, String sportType, String location, Boolean available, String description) {
+    public CourtDTO(Long id, String name, String sportType, String location, Boolean available, String description, Double pricePerHour) {
         this.id = id;
         this.name = name;
         this.sportType = sportType;
         this.location = location;
         this.available = available;
         this.description = description;
+        this.pricePerHour = pricePerHour;
     }
 
     public Long getId() { return id; }
@@ -31,4 +33,6 @@ public class CourtDTO {
     public void setAvailable(Boolean available) { this.available = available; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    public Double getPricePerHour() { return pricePerHour; }
+    public void setPricePerHour(Double pricePerHour) { this.pricePerHour = pricePerHour; }
 }

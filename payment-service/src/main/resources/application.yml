@@ -35,8 +35,8 @@ management:
       show-details: always
 
 app:
-  jwt:
-    secret: courtBookingSecretKey2024VeryLongSecretKeyForJWTTokenGeneration
+  performance:
+    threshold: 500
 
 springdoc:
   api-docs:
