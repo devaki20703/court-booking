@@ -292,9 +292,11 @@ spring:
 ```yaml
 app:
   jwt:
-    secret: courtBookingSecretKey2024VeryLongSecretKeyForJWTTokenGeneration
+    secret: YOUR_SECRET_KEY_HERE
     expiration: 86400000  # 24 hours
 ```
+
+**Note:** Generate a strong secret key for production. Never commit secrets to git!
 
 ## Notes
 

@@ -6,8 +6,8 @@ spring:
     name: payment-service
   datasource:
     url: jdbc:mysql://localhost:3306/court_booking_payments?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: Rama
-    password: Rama@123
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:

@@ -53,7 +53,7 @@ management:
 
 app:
   jwt:
-    secret: courtBookingSecretKey2024VeryLongSecretKeyForJWTTokenGeneration
+    secret: ${JWT_SECRET:YOUR_SECRET_KEY_HERE}
     expiration: 86400000
   performance:
     threshold: 500
