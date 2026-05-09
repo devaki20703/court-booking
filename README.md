@@ -2,73 +2,100 @@
 
 ## Project Overview
 A Spring Boot Microservices architecture for a Court Booking Application with:
-- Eureka Server (Service Registry)
-- API Gateway (Entry point with JWT authentication)
-- User Service (User management)
-- Booking Service (Court and Booking management)
-- Payment Service (Payment processing)
+- **Eureka Server** (Service Registry) - Port 8761
+- **API Gateway** (Entry point with JWT authentication) - Port 8080
+- **User Service** (User management) - Port 8081
+- **Booking Service** (Court and Booking management) - Port 8082
+- **Payment Service** (Payment processing) - Port 8083
+- **Common** (Shared AOP aspects and configuration)
+
+## Architecture
+
+```
+                    ┌─────────────────┐
+                    │   Client App    │
+                    └────────┬────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │  API Gateway    │ ← JWT Validation
+                    │   (Port 8080)   │   Security Config
+                    └────────┬────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         │                   │                   │
+         ▼                   ▼                   ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│  User Service   │ │ Booking Service │ │ Payment Service │
+│   (Port 8081)   │ │   (Port 8082)   │ │   (Port 8083)   │
+└────────┬────────┘ └────────┬────────┘ └────────┬────────┘
+         │                   │                   │
+         └───────────────────┴───────────────────┘
+                             │
+                             ▼
+                    ┌─────────────────┐
+                    │ Eureka Server   │
+                    │  (Port 8761)    │
+                    └─────────────────┘
+```
+
+### Key Changes (v2)
+- **Security**: JWT authentication moved to API Gateway (centralized)
+- **Payment Integration**: Auto-creates payment when booking is made
+- **Common Module**: Shared AOP for logging, performance, exceptions
 
 ## Folder Structure
 
 ```
 CourtBook/
 ├── pom.xml                          (Parent POM)
-├── eureka-server/                   (Service Registry)
+├── common/                          (Shared AOP configuration)
 │   ├── pom.xml
-│   └── src/main/
-│       ├── java/com/courtbooking/eurekaserver/
-│       └── resources/application.yml
-├── api-gateway/                     (API Gateway)
+│   └── src/main/java/com/courtbooking/common/
+│       ├── config/AopConfig.java
+│       └── aspect/
+│           ├── LoggingAspect.java
+│           ├── PerformanceAspect.java
+│           ├── ExceptionAspect.java
+│           └── TraceAspect.java
+├── eureka-server/                   (Service Registry)
+│   └── src/main/resources/application.yml
+├── api-gateway/                     (API Gateway - Security)
 │   ├── pom.xml
 │   └── src/main/
 │       ├── java/com/courtbooking/apigateway/
 │       │   ├── ApiGatewayApplication.java
-│       │   └── config/JwtAuthenticationFilter.java
+│       │   └── config/
+│       │       ├── JwtAuthenticationFilter.java  (JWT validation)
+│       │       ├── GatewayAuthorizationFilter.java (Role-based access)
+│       │       ├── JwtUtil.java
+│       │       └── SecurityConfig.java (WebFlux security)
 │       └── resources/application.yml
-├── user-service/                    (User Management)
-│   ├── pom.xml
-│   └── src/main/
-│       ├── java/com/courtbooking/userservice/
-│       │   ├── UserServiceApplication.java
-│       │   ├── controller/
-│       │   ├── service/
-│       │   ├── repository/
-│       │   ├── entity/
-│       │   ├── dto/
-│       │   ├── config/
-│       │   ├── security/
-│       │   └── exception/
-│       └── resources/application.yml
-├── booking-service/                  (Booking Management)
-│   ├── pom.xml
-│   └── src/main/
-│       ├── java/com/courtbooking/bookingservice/
-│       │   ├── BookingServiceApplication.java
-│       │   ├── controller/
-│       │   ├── service/
-│       │   ├── repository/
-│       │   ├── entity/
-│       │   ├── dto/
-│       │   ├── config/
-│       │   └── exception/
-│       └── resources/application.yml
-├── payment-service/                    (Payment Processing)
-│   ├── pom.xml
-│   └── src/main/
-│       ├── java/com/courtbooking/paymentservice/
-│       │   ├── PaymentServiceApplication.java
-│       │   ├── controller/
-│       │   ├── service/
-│       │   ├── repository/
-│       │   ├── entity/
-│       │   ├── dto/
-│       │   ├── config/
-│       │   ├── security/
-│       │   └── exception/
-│       └── resources/application.yml
-└── sql/
-    ├── user-service-schema.sql
-    └── booking-service-schema.sql
+├── user-service/                    (User Management - Port 8081)
+│   └── src/main/java/com/courtbooking/userservice/
+│       ├── controller/
+│       ├── service/
+│       ├── dto/
+│       ├── entity/
+│       ├── repository/
+│       ├── config/ (EncoderConfig)
+│       └── exception/
+├── booking-service/                 (Booking Management - Port 8082)
+│   └── src/main/java/com/courtbooking/bookingservice/
+│       ├── controller/
+│       ├── service/
+│       │   └── PaymentServiceClient.java (Payment integration)
+│       ├── dto/
+│       ├── entity/
+│       ├── repository/
+│       └── exception/
+└── payment-service/                (Payment Processing - Port 8083)
+    └── src/main/java/com/courtbooking/paymentservice/
+        ├── controller/
+        ├── service/
+        ├── dto/
+        ├── entity/
+        └── repository/
 ```
 
 ## Prerequisites
@@ -97,95 +124,109 @@ CREATE DATABASE court_booking_db;
 CREATE DATABASE court_booking_payments;
 ```
 
-Or use the provided SQL scripts:
-- Run `sql/user-service-schema.sql` for User Service database
-- Run `sql/booking-service-schema.sql` for Booking Service database
-
-**Note:** Update database credentials in `application.yml` files if needed.
-
-## Build Commands
+## Build & Run Commands
 
 ```bash
 # Build all services
 mvn clean install
 
-# Build individual service
-cd eureka-server && mvn clean install
-cd api-gateway && mvn clean install
-cd user-service && mvn clean install
-cd booking-service && mvn clean install
-cd payment-service && mvn clean install
-```
-
-## Run Commands
-
-```bash
-# Run Eureka Server
+# Run each service
 cd eureka-server && mvn spring-boot:run
-
-# Run API Gateway
 cd api-gateway && mvn spring-boot:run
-
-# Run User Service
 cd user-service && mvn spring-boot:run
-
-# Run Booking Service
 cd booking-service && mvn spring-boot:run
-
-# Run Payment Service
 cd payment-service && mvn spring-boot:run
 ```
 
 ## API Endpoints
 
-### User Service (Port: 8081)
+### Through API Gateway (Port 8080)
 
+**User Service:**
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
 | POST | /auth/register | Register new user | No |
 | POST | /auth/login | User login | No |
-| GET | /users/{id} | Get user by ID | JWT (ADMIN) |
-| GET | /users | Get all users | JWT (ADMIN) |
+| GET | /users/{id} | Get user by ID | JWT |
+| GET | /users | Get all users | JWT |
 
-### Booking Service (Port: 8082)
-
+**Booking Service:**
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
 | POST | /courts | Add new court | JWT (ADMIN) |
 | PUT | /courts/{id} | Update court | JWT (ADMIN) |
-| DELETE | /courts/{id} | Delete court | JWT (ADMIN) |
 | GET | /courts | Get all courts | JWT |
 | GET | /courts/{id} | Get court by ID | JWT |
 | GET | /courts/available | Get available courts | JWT |
 | POST | /bookings | Create booking | JWT |
-| DELETE | /bookings/{id} | Cancel booking | JWT |
+| DELETE | /bookings/{id}?userId= | Cancel booking | JWT |
 | GET | /bookings/user/{userId} | Get user bookings | JWT |
 | GET | /bookings/available?date= | Get available slots | JWT |
 
-### Payment Service (Port: 8083)
-
+**Payment Service:**
 | Method | Endpoint | Description | Auth |
 |--------|----------|-------------|------|
-| POST | /api/payments | Create payment | JWT |
-| GET | /api/payments/{id} | Get payment by ID | JWT |
-| GET | /api/payments/booking/{bookingId} | Get payments by booking | JWT |
 | GET | /api/payments/user/{userId} | Get payments by user | JWT |
+| GET | /api/payments/{id} | Get payment by ID | JWT |
 | POST | /api/payments/{id}/process | Process payment | JWT |
 | POST | /api/payments/{id}/refund | Refund payment | JWT |
 
-## Client Request Flow
+## Security Architecture
 
-All requests must go through API Gateway (Port: 8080):
+### Before (Original):
+- Each service has its own Spring Security
+- Each service has JwtAuthenticationFilter
+- Each service validates JWT independently
+
+### After (Current):
+- **API Gateway** handles all JWT validation
+- Services receive headers: `X-User-Id`, `X-Username`, `X-User-Role`
+- Services are stripped of Spring Security (no SecurityConfig)
+- Centralized security management
+
+### JWT Flow:
+```
+1. Client sends request with JWT
+2. API Gateway validates JWT via JwtAuthenticationFilter
+3. If valid, adds headers: X-User-Id, X-User-Role, X-Username
+4. Forwards request to downstream service
+5. Service uses headers for authorization (future)
+```
+
+## Payment Integration Flow
 
 ```
-Client -> API Gateway (8080) -> Eureka -> Service
+User creates booking
+       │
+       ▼
+BookingService validates user via UserServiceClient
+       │
+       ▼
+Court available? ──No──→ Return error
+       │
+      Yes
+       ▼
+Calculate amount (hours × pricePerHour)
+       │
+       ▼
+Amount > 0? ──No──→ Skip payment, booking saved
+       │
+     Yes
+       ▼
+PaymentServiceClient.createPayment()
+       │
+       ▼
+Payment saved with PENDING status
+       │
+       ▼
+Payment auto-processed → COMPLETED
 ```
 
-### Example: Register User
-```
+## Example Requests
+
+### Register:
+```bash
 POST http://localhost:8080/auth/register
-Content-Type: application/json
-
 {
     "username": "newuser",
     "email": "newuser@example.com",
@@ -193,105 +234,43 @@ Content-Type: application/json
 }
 ```
 
-### Example: Login
-```
+### Login:
+```bash
 POST http://localhost:8080/auth/login
-Content-Type: application/json
-
 {
-    "username": "newuser",
+    "usernameOrEmail": "newuser",
     "password": "password123"
 }
 ```
 
-Response:
-```json
-{
-    "token": "eyJhbGciOiJIUzI1NiIs...",
-    "userId": 1,
-    "username": "newuser",
-    "email": "newuser@example.com",
-    "role": "USER"
-}
-```
-
-### Example: Create Booking (with JWT)
-```
+### Create Booking (with JWT):
+```bash
 POST http://localhost:8080/bookings
-Content-Type: application/json
 Authorization: Bearer <token>
-
 {
     "userId": 1,
     "courtId": 1,
-    "bookingDate": "2026-04-20",
-    "startTime": "10:00:00",
-    "endTime": "11:00:00",
-    "notes": "Morning practice"
+    "bookingDate": "2026-05-20",
+    "startTime": "10:00",
+    "endTime": "11:00"
 }
 ```
 
-## Swagger Documentation URLs
+## Swagger Documentation
 
-| Service | Swagger URL | API Docs URL |
-|---------|------------|-------------|
-| User Service | http://localhost:8081/swagger-ui.html | http://localhost:8081/api-docs |
-| Booking Service | http://localhost:8082/swagger-ui.html | http://localhost:8082/api-docs |
-| Payment Service | http://localhost:8083/swagger-ui.html | http://localhost:8083/api-docs |
-
-## Security
-
-- JWT Token Authentication
-- BCrypt Password Encryption
-- Role-based Authorization (ADMIN/USER)
-- Stateless Session Management
-
-## Sample Test Data
-
-### Users (in court_booking_users database)
-
-| Username | Email | Password | Role |
-|----------|-------|----------|------|
-| admin | admin@courtbooking.com | password123 | ADMIN |
-| user1 | user1@courtbooking.com | password123 | USER |
-| user2 | user2@courtbooking.com | password123 | USER |
-
-### Courts (in court_booking_db database)
-
-| Name | Sport Type | Location |
-|------|------------|----------|
-| Court Alpha | Tennis | Ground Floor - Court 1 |
-| Court Beta | Badminton | Ground Floor - Court 2 |
-| Court Gamma | Basketball | First Floor - Court 1 |
-| Court Delta | Volleyball | First Floor - Court 2 |
-| Court Epsilon | Tennis | Second Floor - Court 3 |
+| Service | URL |
+|---------|-----|
+| User Service | http://localhost:8081/swagger-ui.html |
+| Booking Service | http://localhost:8082/swagger-ui.html |
+| Payment Service | http://localhost:8083/swagger-ui.html |
 
 ## Configuration
 
-### application.yml for each service:
-
-**Eureka Server** (application.yml):
+### API Gateway (application.yml):
 ```yaml
-server:
-  port: 8761
 spring:
-  application:
-    name: eureka-server
-eureka:
-  instance:
-    hostname: localhost
-  client:
-    registerWithEureka: false
-    fetchRegistry: false
-```
-
-**API Gateway** (application.yml):
-```yaml
-server:
-  port: 8080
-spring:
-  application:
-    name: api-gateway
+  main:
+    web-application-type: reactive  # Required for WebFlux
   cloud:
     gateway:
       routes:
@@ -306,54 +285,22 @@ spring:
         - id: payment-service
           uri: lb://payment-service
           predicates:
-            - Path=/payments/**,/api/payments/**
+            - Path=/api/payments/**
 ```
 
-**User Service** (application.yml):
+### JWT Secret (in application.yml):
 ```yaml
-server:
-  port: 8081
-spring:
-  application:
-    name: user-service
-  datasource:
-    url: jdbc:mysql://localhost:3306/court_booking_users
-    username: root
-    password: root
-```
-
-**Booking Service** (application.yml):
-```yaml
-server:
-  port: 8082
-spring:
-  application:
-    name: booking-service
-  datasource:
-    url: jdbc:mysql://localhost:3306/court_booking_db
-    username: root
-    password: root
-```
-
-**Payment Service** (application.yml):
-```yaml
-server:
-  port: 8083
-spring:
-  application:
-    name: payment-service
-  datasource:
-    url: jdbc:mysql://localhost:3306/court_booking_payments
-    username: root
-    password: root
+app:
+  jwt:
+    secret: courtBookingSecretKey2024VeryLongSecretKeyForJWTTokenGeneration
+    expiration: 86400000  # 24 hours
 ```
 
 ## Notes
 
 1. Start Eureka Server first and wait for it to be ready
 2. All services register with Eureka automatically
-3. API Gateway routes requests based on path patterns
-4. JWT filter validates tokens for protected endpoints
-5. Booking Service validates user via REST call to User Service
-6. Use RestTemplate for service-to-service communication
-7. Payment is automatically created when a booking with a fee is made
+3. API Gateway handles JWT validation centrally
+4. Payment is automatically created when a booking has a fee
+5. Services communicate via RestTemplate
+6. Each service has its own database (users, bookings, payments)
