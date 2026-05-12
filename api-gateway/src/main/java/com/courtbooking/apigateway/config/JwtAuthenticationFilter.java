@@ -69,16 +69,20 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             String username = claims.get("username", String.class);
             String role = claims.get("role", String.class);
 
-            ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                    .header("X-User-Id", userId)
-                    .header("X-Username", username != null ? username : "")
-                    .header("X-User-Role", role != null ? role : "")
-                    .build();
+            // Mutate request with new headers
+            ServerHttpRequest.Builder requestBuilder = exchange.getRequest().mutate();
+            requestBuilder.header("X-User-Id", userId);
+            if (username != null) {
+                requestBuilder.header("X-Username", username);
+            }
+            if (role != null) {
+                requestBuilder.header("X-User-Role", role);
+            }
 
             logger.info("JWT Filter: Added headers - X-User-Id: {}, X-User-Role: {}", userId, role);
 
             ServerWebExchange modifiedExchange = exchange.mutate()
-                    .request(mutatedRequest)
+                    .request(requestBuilder.build())
                     .build();
 
             return chain.filter(modifiedExchange);

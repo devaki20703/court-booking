@@ -18,19 +18,21 @@ spring:
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/auth/**,/users/**
+            - Path=/auth/**,/users/**,/users
           filters:
             - StripPrefix=0
         - id: booking-service
           uri: lb://booking-service
           predicates:
-            - Path=/courts/**,/bookings/**,/bookings
+            - Path=/courts/**,/bookings/**,/bookings,/courts
           filters:
             - StripPrefix=0
         - id: payment-service
           uri: lb://payment-service
           predicates:
-            - Path=/api/payments/**,/payments/**
+            - Path=/api/payments/**,/payments/**,/payments
+          filters:
+            - StripPrefix=1
       discoveryLocator:
         enabled: true
 
