@@ -1,0 +1,4 @@
+app:
+  jwt:
+    secret: very-long-secret-key-that-is-at-least-32-bytes-long-for-hs256
+    expiration: 86400000

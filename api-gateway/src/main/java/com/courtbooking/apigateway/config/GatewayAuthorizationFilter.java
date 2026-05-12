@@ -36,6 +36,19 @@ public class GatewayAuthorizationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+        String path = request.getPath().value();
+
+        if (isPublicPath(path)) {
+            return chain.filter(exchange);
+        }
+
+        String userRole = request.getHeaders().getFirst("X-User-Role");
+
+        if (!hasPermission(path, userRole)) {
+            return forbidden(exchange.getResponse(), "Access denied for this resource");
+        }
+
         return chain.filter(exchange);
     }
 
@@ -55,13 +68,6 @@ public class GatewayAuthorizationFilter implements GlobalFilter, Ordered {
         }
 
         return true;
-    }
-
-    private Mono<Void> unauthorized(ServerHttpResponse response, String message) {
-        response.setStatusCode(HttpStatus.UNAUTHORIZED);
-        response.getHeaders().add("Content-Type", "application/json");
-        String body = String.format("{\"status\":401,\"error\":\"Unauthorized\",\"message\":\"%s\"}", message);
-        return response.writeWith(Mono.just(response.bufferFactory().wrap(body.getBytes())));
     }
 
     private Mono<Void> forbidden(ServerHttpResponse response, String message) {
