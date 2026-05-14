@@ -93,7 +93,17 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(path::startsWith);
+        for (String publicPath : PUBLIC_PATHS) {
+            if (publicPath.endsWith("/**")) {
+                String prefix = publicPath.substring(0, publicPath.length() - 2);
+                if (path.startsWith(prefix)) {
+                    return true;
+                }
+            } else if (path.startsWith(publicPath)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Mono<Void> unauthorized(ServerHttpResponse response) {

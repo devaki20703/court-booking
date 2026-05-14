@@ -90,7 +90,7 @@ class JwtAuthenticationFilterTest {
 
         when(mockChain.filter(any())).thenReturn(Mono.empty());
 
-        filter.filter(exchange, mockChain);
+        filter.filter(exchange, mockChain).block();
 
         verify(mockChain).filter(exchange);
     }
@@ -102,7 +102,7 @@ class JwtAuthenticationFilterTest {
 
         when(mockChain.filter(any())).thenReturn(Mono.empty());
 
-        filter.filter(exchange, mockChain);
+        filter.filter(exchange, mockChain).block();
 
         verify(mockChain).filter(exchange);
     }

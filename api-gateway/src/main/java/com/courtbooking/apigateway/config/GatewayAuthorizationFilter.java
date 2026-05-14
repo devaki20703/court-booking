@@ -37,6 +37,19 @@ public class GatewayAuthorizationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        ServerHttpRequest request = exchange.getRequest();
+        String path = request.getURI().getPath();
+
+        if (isPublicPath(path)) {
+            return chain.filter(exchange);
+        }
+
+        String userRole = request.getHeaders().getFirst("X-User-Role");
+
+        if (!hasPermission(path, userRole)) {
+            return forbidden(exchange.getResponse(), "Access denied: insufficient permissions");
+        }
+
         return chain.filter(exchange);
     }
 

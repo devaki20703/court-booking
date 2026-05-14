@@ -3,6 +3,7 @@ package com.courtbooking.bookingservice.controller;
 import com.courtbooking.bookingservice.dto.BookingDTO;
 import com.courtbooking.bookingservice.dto.BookingRequest;
 import com.courtbooking.bookingservice.exception.BadRequestException;
+import com.courtbooking.bookingservice.exception.GlobalExceptionHandler;
 import com.courtbooking.bookingservice.exception.ResourceNotFoundException;
 import com.courtbooking.bookingservice.service.BookingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(BookingController.class)
+@Import(GlobalExceptionHandler.class)
 class BookingControllerTest {
 
     @Autowired
@@ -87,9 +90,16 @@ class BookingControllerTest {
     }
 
     @Test
-    void createBooking_ShouldReturnBadRequest_WhenValidationFails() throws Exception {
+    void createBooking_ShouldReturnBadRequest_WhenUserIdIsNull() throws Exception {
         BookingRequest invalidRequest = new BookingRequest();
         invalidRequest.setUserId(null);
+        invalidRequest.setCourtId(1L);
+        invalidRequest.setBookingDate(LocalDate.now().plusDays(1));
+        invalidRequest.setStartTime(LocalTime.of(10, 0));
+        invalidRequest.setEndTime(LocalTime.of(11, 0));
+
+        when(bookingService.createBooking(any(BookingRequest.class)))
+                .thenThrow(new BadRequestException("User ID is required"));
 
         mockMvc.perform(post("/bookings")
                         .contentType(MediaType.APPLICATION_JSON)

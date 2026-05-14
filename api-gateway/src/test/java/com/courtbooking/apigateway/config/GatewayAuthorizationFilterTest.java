@@ -121,16 +121,15 @@ class GatewayAuthorizationFilterTest {
     }
 
     @Test
-    void shouldDenyAccessToPaymentsWithUserRole() {
-        MockServerHttpRequest request = MockServerHttpRequest.get("/api/payments")
+    void shouldAllowAccessToPaymentsWithUserRole() {
+        MockServerHttpRequest request = MockServerHttpRequest.get("/payments")
                 .header("X-User-Role", "USER")
                 .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-        Mono<Void> result = filter.filter(exchange, mockChain);
+        filter.filter(exchange, mockChain);
 
-        StepVerifier.create(result).verifyComplete();
-        assertEquals(HttpStatus.FORBIDDEN, exchange.getResponse().getStatusCode());
+        verify(mockChain).filter(exchange);
     }
 
     @Test

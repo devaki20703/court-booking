@@ -141,10 +141,16 @@ public class BookingService {
     }
 
     private BookingDTO mapToDTO(Booking booking) {
+        if (booking == null) {
+            return null;
+        }
         return mapToDTO(booking, 0);
     }
 
     private BookingDTO mapToDTO(Booking booking, double amount) {
+        if (booking == null) {
+            return null;
+        }
         BookingDTO dto = new BookingDTO();
         dto.setId(booking.getId());
         dto.setUserId(booking.getUserId());
