@@ -13,7 +13,9 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${app.jwt.secret}")
+    private static final String DEFAULT_SECRET = "ThisIsAVerySecureSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm";
+
+    @Value("${app.jwt.secret:" + DEFAULT_SECRET + "}")
     private String jwtSecret;
 
     @Value("${app.jwt.expiration:86400000}")

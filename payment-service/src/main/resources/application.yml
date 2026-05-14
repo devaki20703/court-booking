@@ -22,7 +22,8 @@ eureka:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
   instance:
-    preferIpAddress: true
+    hostname: localhost
+    preferIpAddress: false
     health-check-url-path: /actuator/health
 
 management:
@@ -45,5 +46,15 @@ springdoc:
     path: /swagger-ui.html
 
 logging:
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   level:
     com.courtbooking: DEBUG
+  file:
+    name: logs/payment-service.log
+    max-size: 10MB
+    max-history: 30
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      total-size-cap: 1GB

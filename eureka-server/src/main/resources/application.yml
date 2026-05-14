@@ -15,3 +15,13 @@ eureka:
       defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
   server:
     enableSelfPreservation: false
+
+logging:
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  level:
+    com.courtbooking: DEBUG
+  file:
+    name: logs/eureka-server.log
+    max-size: 10MB
+    max-history: 30

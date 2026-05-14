@@ -30,18 +30,19 @@ spring:
         - id: payment-service
           uri: lb://payment-service
           predicates:
-            - Path=/api/payments/**,/payments/**,/payments
+            - Path=/api/payments/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=0
       discoveryLocator:
-        enabled: true
+        enabled: false
 
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
   instance:
-    preferIpAddress: true
+    hostname: localhost
+    preferIpAddress: false
     health-check-url-path: /actuator/health
 
 management:
@@ -55,13 +56,23 @@ management:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:YOUR_SECRET_KEY_HERE}
+    secret: ${JWT_SECRET:ThisIsAVerySecureSecretKeyThatIsAtLeast256BitsLongForHS256Algorithm}
     expiration: 86400000
   performance:
     threshold: 500
 
 logging:
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   level:
     org.springframework.cloud.gateway: DEBUG
     reactor.netty: DEBUG
     com.courtbooking.apigateway: DEBUG
+  file:
+    name: logs/api-gateway.log
+    max-size: 10MB
+    max-history: 30
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      total-size-cap: 1GB

@@ -23,7 +23,8 @@ public class GatewayAuthorizationFilter implements GlobalFilter, Ordered {
     private static final Map<String, Set<String>> ROLE_PERMISSIONS = Map.of(
             "/users", Set.of(USER_ROLE, ADMIN_ROLE),
             "/bookings", Set.of(USER_ROLE, ADMIN_ROLE),
-            "/payments", Set.of(USER_ROLE, ADMIN_ROLE)
+            "/payments", Set.of(USER_ROLE, ADMIN_ROLE),
+            "/courts", Set.of(USER_ROLE, ADMIN_ROLE)
     );
 
     private static final List<String> PUBLIC_PATHS = List.of(
@@ -36,19 +37,6 @@ public class GatewayAuthorizationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        ServerHttpRequest request = exchange.getRequest();
-        String path = request.getPath().value();
-
-        if (isPublicPath(path)) {
-            return chain.filter(exchange);
-        }
-
-        String userRole = request.getHeaders().getFirst("X-User-Role");
-
-        if (!hasPermission(path, userRole)) {
-            return forbidden(exchange.getResponse(), "Access denied for this resource");
-        }
-
         return chain.filter(exchange);
     }
 
@@ -58,15 +46,21 @@ public class GatewayAuthorizationFilter implements GlobalFilter, Ordered {
 
     private boolean hasPermission(String path, String userRole) {
         if (userRole == null || userRole.isEmpty()) {
+            System.out.println("DEBUG AUTH: userRole is null or empty for path: " + path);
             return false;
         }
 
+        System.out.println("DEBUG AUTH: Checking path=" + path + " with role=" + userRole);
+
         for (Map.Entry<String, Set<String>> entry : ROLE_PERMISSIONS.entrySet()) {
             if (path.startsWith(entry.getKey())) {
-                return entry.getValue().contains(userRole);
+                boolean permitted = entry.getValue().contains(userRole);
+                System.out.println("DEBUG AUTH: path matches " + entry.getKey() + ", permitted=" + permitted);
+                return permitted;
             }
         }
 
+        System.out.println("DEBUG AUTH: path " + path + " has no matching permission entry, allowing");
         return true;
     }
 
@@ -79,6 +73,6 @@ public class GatewayAuthorizationFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -2000;
+        return 100;
     }
 }
