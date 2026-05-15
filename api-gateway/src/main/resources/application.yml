@@ -10,10 +10,26 @@ spring:
     discovery:
       enabled: true
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
       httpclient:
         response-timeout: 30s
+
       routes:
         - id: user-service
           uri: lb://user-service
@@ -21,18 +37,21 @@ spring:
             - Path=/auth/**,/users/**,/users
           filters:
             - StripPrefix=0
+
         - id: booking-service
           uri: lb://booking-service
           predicates:
             - Path=/courts/**,/bookings/**,/bookings,/courts
           filters:
             - StripPrefix=0
+
         - id: payment-service
           uri: lb://payment-service
           predicates:
             - Path=/api/payments/**
           filters:
             - StripPrefix=0
+
       discoveryLocator:
         enabled: false
 
